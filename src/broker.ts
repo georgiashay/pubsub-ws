@@ -26,6 +26,34 @@ export class Broker {
     this.subsByChannel.set(channel, sub);
   }
 
+  unsubscribe(wsId: string): void {
+    if (!this.subsByWsId.has(wsId)) {
+      return;
+    }
+
+    const subs = this.subsByWsId.get(wsId);
+
+    if (subs) {
+      subs.forEach(sub => {
+        const prev = sub.prev;
+        const next = sub.next;
+        if (next) {
+          next.prev = prev;
+        }
+        if (prev) {
+          prev.next = next;
+        }
+        if (this.subsByChannel.get(sub.channel) === sub) {
+          if (next === undefined) {
+            this.subsByChannel.delete(sub.channel)
+          } else {
+            this.subsByChannel.set(sub.channel, next);
+          }
+        }
+      });
+    }
+  }
+
   unsubscribeAll(wsId: string): void {
     const subs = this.subsByWsId.get(wsId);
     if (subs) {
